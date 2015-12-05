@@ -1,0 +1,50 @@
+{
+    "name": "Level 13",
+    "maxCycles": 2,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 100,
+        "y": 100
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 300,
+        "y": 100
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 100,
+        "y": 300
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 2,
+        "x": 500,
+        "y": 100
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 4,
+        "x": 300,
+        "y": 300
+    } ],
+    "pipes": [ {
+		"type": "standard",
+		"source": 0,
+		"dest": 1
+	}, {
+        "type": "standard",
+        "source": 1,
+        "dest": 3
+    }, {
+        "type": "standard",
+        "source": 1,
+        "dest": 4
+    }, {
+        "type": "standard",
+        "source": 2,
+        "dest": 4
+    } ],
+    "toolbox": [1, 2, 3]
+}

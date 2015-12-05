@@ -1,0 +1,64 @@
+{
+    "name": "Level 15",
+    "maxCycles": 1,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 100,
+        "y": 150
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 500,
+        "y": 150
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 300,
+        "y": 400
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 4,
+        "x": 300,
+        "y": 100
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 5,
+        "x": 100,
+        "y": 350
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 3,
+        "x": 500,
+        "y": 350
+    } ],
+    "pipes": [ {
+		"type": "standard",
+		"source": 0,
+		"dest": 3
+	}, {
+        "type": "standard",
+        "source": 0,
+        "dest": 4
+    }, {
+        "type": "standard",
+        "source": 1,
+        "dest": 3
+    }, {
+        "type": "standard",
+        "source": 1,
+        "dest": 5
+    }, {
+        "type": "standard",
+        "source": 2,
+        "dest": 4
+    }, {
+        "type": "standard",
+        "source": 2,
+        "dest": 5
+    } ],
+    "toolbox": [1, 2, 3, 4, 5, 6]
+}

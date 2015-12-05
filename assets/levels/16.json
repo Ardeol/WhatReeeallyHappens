@@ -1,0 +1,22 @@
+{
+    "name": "Level 16",
+    "maxCycles": 1,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 250,
+        "y": 100
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 3,
+        "x": 250,
+        "y": 400
+    } ],
+    "pipes": [ {
+		"type": "flippable",
+		"source": 1,
+		"dest": 0
+	} ],
+    "toolbox": [3]
+}
