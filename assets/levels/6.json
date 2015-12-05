@@ -1,0 +1,45 @@
+{
+    "name": "Level 6",
+    "maxCycles": 1,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 100,
+        "y": 400
+    }, {
+        "type": "goal",
+        "goal": 1,
+        "value": 0,
+        "x": 100,
+        "y": 100
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 1,
+        "x": 400,
+        "y": 100
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 400,
+        "y": 400
+    } ],
+    "pipes": [ {
+		"type": "standard",
+		"source": 3,
+		"dest": 0
+	}, {
+        "type": "standard",
+        "source": 3,
+        "dest": 1
+    }, {
+        "type": "standard",
+        "source": 3,
+        "dest": 2
+    }, {
+        "type": "standard",
+        "source": 0,
+        "dest": 1
+    } ],
+    "toolbox": [3]
+}

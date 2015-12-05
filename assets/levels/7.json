@@ -1,0 +1,32 @@
+{
+    "name": "Level 7",
+    "maxCycles": 1,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 100,
+        "y": 100
+    }, {
+        "type": "standard",
+        "goal": 1,
+        "value": 0,
+        "x": 100,
+        "y": 400
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 3,
+        "x": 400,
+        "y": 250
+    } ],
+    "pipes": [ {
+		"type": "standard",
+		"source": 0,
+		"dest": 2
+	}, {
+        "type": "standard",
+        "source": 1,
+        "dest": 2
+    } ],
+    "toolbox": [1, 2, 1]
+}

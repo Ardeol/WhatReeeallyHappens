@@ -1,0 +1,71 @@
+{
+    "name": "Level 18",
+    "maxCycles": 4,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 100,
+        "y": 100
+    }, {
+        "type": "standard",
+        "value": 4,
+        "x": 300,
+        "y": 100
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 500,
+        "y": 100
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 200,
+        "y": 250
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 5,
+        "x": 400,
+        "y": 250
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 5,
+        "x": 300,
+        "y": 400
+    } ],
+    "pipes": [ {
+		"type": "standard",
+		"source": 0,
+		"dest": 1
+	}, {
+        "type": "standard",
+        "source": 0,
+        "dest": 3
+    }, {
+        "type": "standard",
+        "source": 1,
+        "dest": 2
+    }, {
+        "type": "flippable",
+        "source": 1,
+        "dest": 3
+    }, {
+        "type": "standard",
+        "source": 1,
+        "dest": 4
+    }, {
+        "type": "standard",
+        "source": 2,
+        "dest": 4
+    }, {
+        "type": "standard",
+        "source": 3,
+        "dest": 5
+    }, {
+        "type": "flippable",
+        "source": 4,
+        "dest": 5
+    } ],
+    "toolbox": [5, 1, 2]
+}
