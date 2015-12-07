@@ -1,6 +1,6 @@
 { 
   "levels": [ {
-    "number" : "1",
+    "number" : 1,
     "image": "ph_level_0.png",
     "x" : 100,
     "y" : 100,
@@ -13,7 +13,7 @@
         "y": 200
         }]
   }, {
-    "number" : "2",
+    "number" : 2,
     "image": "ph_level_1.png",
     "x" : 200,
     "y" : 100,
@@ -22,7 +22,7 @@
         "y": 200
       }]
   }, {
-    "number" : "3",
+    "number" : 3,
     "image": "ph_level_2.png",
     "x" : 300,
     "y" : 150,
@@ -31,7 +31,7 @@
         "y": 250   
     }]
   }, {
-    "number" : "4",
+    "number" : 4,
     "image": "ph_level_1.png",
     "x" : 400,
     "y" : 250,
