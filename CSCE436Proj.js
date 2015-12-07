@@ -1,4 +1,4 @@
-(function (console) { "use strict";
+(function (console, $global) { "use strict";
 function $extend(from, fields) {
 	function Inherit() {} Inherit.prototype = from; var proto = new Inherit();
 	for (var name in fields) proto[name] = fields[name];
@@ -21,13 +21,53 @@ Assets.getSpriteURL = function(sprite) {
 Assets.getTexture = function(url) {
 	return PIXI.Texture.fromImage("" + "assets" + "/sprites/" + url);
 };
+var AudioManager = function() { };
+AudioManager.__name__ = true;
+AudioManager.init = function() {
+	if(!AudioManager.initialized) {
+		AudioManager.initialized = true;
+		AudioManager.sounds = new haxe_ds_StringMap();
+		AudioManager.initSound("audio-menu");
+		AudioManager.initSound("audio-level");
+		AudioManager.initSound("audio-credits");
+		AudioManager.initSound("audio-door");
+		AudioManager.initSound("audio-drop");
+		AudioManager.initSound("audio-santa");
+		AudioManager.initSound("audio-win");
+	}
+};
+AudioManager.play = function(sound) {
+	AudioManager.sounds.get(sound).loop = false;
+	AudioManager.sounds.get(sound).load();
+	AudioManager.sounds.get(sound).play();
+};
+AudioManager.loop = function(sound) {
+	AudioManager.sounds.get(sound).loop = true;
+	AudioManager.sounds.get(sound).play();
+};
+AudioManager.stop = function(sound) {
+	AudioManager.sounds.get(sound).pause();
+};
+AudioManager.stopAll = function() {
+	var $it0 = AudioManager.sounds.iterator();
+	while( $it0.hasNext() ) {
+		var sound = $it0.next();
+		sound.pause();
+	}
+};
+AudioManager.initSound = function(sound) {
+	var v;
+	v = js_Boot.__cast(window.document.getElementById(sound) , HTMLAudioElement);
+	AudioManager.sounds.set(sound,v);
+	v;
+};
 var Bag = function(numPresents,baseX,baseY) {
 	PIXI.Sprite.call(this,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_bag.png"));
 	this.dragging = false;
 	this.basePos = new PIXI.Point(baseX,baseY);
 	this.posBeforeDrag = new PIXI.Point(0,0);
 	this.position.set(baseX,baseY);
-	this.on("mousemove",$bind(this,this.doDrag));
+	ExtEventEmitter.onMove(this,$bind(this,this.doDrag));
 	this.capacity = numPresents;
 	this.presents = new TypedSpriteGroup();
 	var _g = 0;
@@ -116,7 +156,19 @@ Debug.__name__ = true;
 Debug.log = function(obj) {
 	var msg = Std.string(obj);
 	var div = window.document.getElementById("debug");
-	if(div != null) div.innerHTML = "<p>" + msg + "</p>" + div.innerHTML; else _$Error_Error_$Impl_$.report("div was null somehow.  Message was:\n" + msg);
+	if(div == null) {
+		var _this = window.document;
+		div = _this.createElement("div");
+		div.id = "debug";
+		div.style.position = "absolute";
+		div.style.top = "800px";
+		div.style.width = "100%";
+		div.style.minHeight = "500px";
+		div.style.maxHeight = "500px";
+		div.style.overflow = "scroll";
+		window.document.body.appendChild(div);
+	}
+	div.innerHTML = "<p>" + msg + "</p>" + div.innerHTML;
 	Debug.history.push(msg);
 };
 Debug.alert = function(obj) {
@@ -141,6 +193,34 @@ _$Error_Error_$Impl_$._new = function(msg,cls,method) {
 };
 _$Error_Error_$Impl_$.report = function(err) {
 	js_Browser.alert(Std.string(err));
+};
+var ExtEventEmitter = function() { };
+ExtEventEmitter.__name__ = true;
+ExtEventEmitter.onClick = function(s,cb) {
+	s.on("mousedown",cb);
+	s.on("touchstart",cb);
+};
+ExtEventEmitter.onMove = function(s,cb) {
+	s.on("mousemove",cb);
+	s.on("touchmove",cb);
+};
+ExtEventEmitter.onRelease = function(s,cb) {
+	s.on("mouseup",cb);
+	s.on("mouseupoutside",cb);
+	s.on("touchend",cb);
+	s.on("touchendoutside",cb);
+};
+ExtEventEmitter.onOut = function(s,cb) {
+	s.on("mouseout",cb);
+	s.on("touchout",cb);
+};
+ExtEventEmitter.onReleaseOrOut = function(s,cb) {
+	s.on("mouseup",cb);
+	s.on("mouseupoutside",cb);
+	s.on("touchend",cb);
+	s.on("touchendoutside",cb);
+	s.on("mouseout",cb);
+	s.on("touchout",cb);
 };
 var Game = function() {
 	PIXI.Container.call(this);
@@ -222,6 +302,9 @@ GameState.makeButton = function(texture,trans) {
 	var b = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + texture));
 	b.interactive = true;
 	b.on("mousedown",function(e) {
+		trans();
+	});
+	b.on("touchstart",function(e) {
 		trans();
 	});
 	return b;
@@ -403,6 +486,9 @@ var LevelSprite = function(num,sprite) {
 	this.on("mousedown",function(e) {
 		GameState.toLevel(_g.number);
 	});
+	this.on("touchstart",function(e) {
+		GameState.toLevel(_g.number);
+	});
 	if(this.texture.baseTexture.hasLoaded) this.center(); else this.texture.baseTexture.on("loaded",$bind(this,this.center));
 };
 LevelSprite.__name__ = true;
@@ -497,6 +583,15 @@ pixi_plugins_app_Application.prototype = {
 		this._lastTime = new Date();
 		this._addStats();
 	}
+	,pauseRendering: function() {
+		window.onresize = null;
+		window.requestAnimationFrame(function() {
+		});
+	}
+	,resumeRendering: function() {
+		if(this.autoResize) window.onresize = $bind(this,this._onWindowResize);
+		window.requestAnimationFrame($bind(this,this._onRequestAnimationFrame));
+	}
 	,_onWindowResize: function(event) {
 		this.width = window.innerWidth;
 		this.height = window.innerHeight;
@@ -529,6 +624,7 @@ pixi_plugins_app_Application.prototype = {
 		ren = _this.createElement("div");
 		ren.style.position = "absolute";
 		ren.style.width = "76px";
+		ren.style.top = top + "px";
 		ren.style.right = "0px";
 		ren.style.background = "#CCCCC";
 		ren.style.backgroundColor = "#105CB6";
@@ -545,7 +641,13 @@ pixi_plugins_app_Application.prototype = {
 };
 var Main = function() {
 	pixi_plugins_app_Application.call(this);
+	this.autoResize = false;
+	this.width = 1200;
+	this.height = 900;
 	pixi_plugins_app_Application.prototype.start.call(this);
+	this.resize();
+	window.onresize = $bind(this,this.resize);
+	AudioManager.init();
 	var game = new Game();
 	this.stage.addChild(game);
 	this.onUpdate = $bind(game,game.update);
@@ -561,7 +663,16 @@ Main.main = function() {
 };
 Main.__super__ = pixi_plugins_app_Application;
 Main.prototype = $extend(pixi_plugins_app_Application.prototype,{
-	__class__: Main
+	resize: function() {
+		var w = window.innerWidth;
+		var h = window.innerHeight;
+		var ratio = Math.max(1200 / w,900 / h);
+		if(w > 1200 && h > 900) ratio = 1;
+		w = Math.floor(1200 * ratio);
+		h = Math.floor(900 * ratio);
+		this.renderer.resize(w,h);
+	}
+	,__class__: Main
 });
 Math.__name__ = true;
 var Network = function() {
@@ -870,10 +981,10 @@ var StartStopButton = function(network,toolbox) {
 	this.network = network;
 	this.toolbox = toolbox;
 	this.startButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_start.png"));
-	this.startButton.on("mouseup",$bind(this,this.start));
+	ExtEventEmitter.onRelease(this.startButton,$bind(this,this.start));
 	this.startButton.interactive = true;
 	this.stopButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_stop.png"));
-	this.stopButton.on("mouseup",$bind(this,this.stop));
+	ExtEventEmitter.onRelease(this.stopButton,$bind(this,this.stop));
 	this.stopButton.interactive = true;
 	this.stopButton.visible = false;
 	this.addChild(this.startButton);
@@ -922,19 +1033,14 @@ Toolbox.fromJson = function(data) {
 			++_g;
 			Debug.log(bdata);
 			var bag = new Bag(bdata,toolbox.bags.length % 5 * 100,Math.floor(toolbox.bags.length / 5) * 100);
-			bag.on("mousedown",(function(f,a1) {
+			ExtEventEmitter.onClick(bag,(function(f,a1) {
 				return function(e) {
 					f(a1,e);
 				};
 			})($bind(toolbox,toolbox.onSelectItem),bag));
-			bag.on("mouseup",(function(f1,a11) {
+			ExtEventEmitter.onRelease(bag,(function(f1,a11) {
 				return function(e1) {
 					f1(a11,e1);
-				};
-			})($bind(toolbox,toolbox.onUnselectItem),bag));
-			bag.on("mouseupoutside",(function(f2,a12) {
-				return function(e2) {
-					f2(a12,e2);
 				};
 			})($bind(toolbox,toolbox.onUnselectItem),bag));
 			toolbox.bags.push(bag);
@@ -977,12 +1083,13 @@ Toolbox.prototype = $extend(PIXI.Container.prototype,{
 		}
 	}
 	,onSelectItem: function(bag,e) {
-		Debug.log("Clicked!!");
 		bag.startDrag();
+		AudioManager.play("audio-drop");
 	}
 	,onUnselectItem: function(bag,e) {
 		bag.stopDrag();
 		bag.apply((js_Boot.__cast(Game.instance.state , states_LevelState)).network);
+		AudioManager.play("audio-drop");
 	}
 	,__class__: Toolbox
 });
@@ -1050,6 +1157,61 @@ Type.createInstance = function(cl,args) {
 		throw new js__$Boot_HaxeError("Too many arguments");
 	}
 	return null;
+};
+var haxe_IMap = function() { };
+haxe_IMap.__name__ = true;
+var haxe_ds__$StringMap_StringMapIterator = function(map,keys) {
+	this.map = map;
+	this.keys = keys;
+	this.index = 0;
+	this.count = keys.length;
+};
+haxe_ds__$StringMap_StringMapIterator.__name__ = true;
+haxe_ds__$StringMap_StringMapIterator.prototype = {
+	hasNext: function() {
+		return this.index < this.count;
+	}
+	,next: function() {
+		return this.map.get(this.keys[this.index++]);
+	}
+	,__class__: haxe_ds__$StringMap_StringMapIterator
+};
+var haxe_ds_StringMap = function() {
+	this.h = { };
+};
+haxe_ds_StringMap.__name__ = true;
+haxe_ds_StringMap.__interfaces__ = [haxe_IMap];
+haxe_ds_StringMap.prototype = {
+	set: function(key,value) {
+		if(__map_reserved[key] != null) this.setReserved(key,value); else this.h[key] = value;
+	}
+	,get: function(key) {
+		if(__map_reserved[key] != null) return this.getReserved(key);
+		return this.h[key];
+	}
+	,setReserved: function(key,value) {
+		if(this.rh == null) this.rh = { };
+		this.rh["$" + key] = value;
+	}
+	,getReserved: function(key) {
+		if(this.rh == null) return null; else return this.rh["$" + key];
+	}
+	,arrayKeys: function() {
+		var out = [];
+		for( var key in this.h ) {
+		if(this.h.hasOwnProperty(key)) out.push(key);
+		}
+		if(this.rh != null) {
+			for( var key in this.rh ) {
+			if(key.charCodeAt(0) == 36) out.push(key.substr(1));
+			}
+		}
+		return out;
+	}
+	,iterator: function() {
+		return new haxe_ds__$StringMap_StringMapIterator(this,this.arrayKeys());
+	}
+	,__class__: haxe_ds_StringMap
 };
 var js__$Boot_HaxeError = function(val) {
 	Error.call(this);
@@ -1197,7 +1359,7 @@ js_Boot.__isNativeObj = function(o) {
 	return js_Boot.__nativeClassName(o) != null;
 };
 js_Boot.__resolveNativeClass = function(name) {
-	return (Function("return typeof " + name + " != \"undefined\" ? " + name + " : null"))();
+	return $global[name];
 };
 var js_Browser = function() { };
 js_Browser.__name__ = true;
@@ -1319,11 +1481,13 @@ junctions_GoalJunction.prototype = $extend(junctions_StandardJunction.prototype,
 	}
 	,receive: function() {
 		junctions_StandardJunction.prototype.receive.call(this);
+		var satisfiedBefore = this.goalPresents.length == this.goal;
 		while(this.presents.length > 0 && this.goalPresents.length != this.goal) {
 			var present = this.presents.pop();
 			this.goalPresents.push(present);
 			present.position.set(-1000.0,-1000.0);
 		}
+		if(!satisfiedBefore && this.goalPresents.length == this.goal) AudioManager.play("audio-door");
 		this.goalText.text = Std.string(this.goal - this.goalPresents.length);
 	}
 	,canAttachBag: function(b) {
@@ -1350,7 +1514,7 @@ var pipes_FlippablePipe = function(source,destination,partner) {
 		this.hidePipe();
 		this.primary = false;
 	}
-	this.on("mouseup",$bind(this,this.toggle));
+	ExtEventEmitter.onRelease(this,$bind(this,this.toggle));
 };
 pipes_FlippablePipe.__name__ = true;
 pipes_FlippablePipe.__super__ = Pipe;
@@ -1400,10 +1564,9 @@ var states_LevelSelectState = function() {
 	this.mapMask.endFill();
 	this.addChild(this.mapMask);
 	this.map = new PIXI.Container();
-	this.map.on("mousedown",$bind(this,this.startDrag));
-	this.map.on("mousemove",$bind(this,this.mouseMove));
-	this.map.on("mouseup",$bind(this,this.stopDrag));
-	this.map.on("mouseout",$bind(this,this.stopDrag));
+	ExtEventEmitter.onClick(this.map,$bind(this,this.startDrag));
+	ExtEventEmitter.onRelease(this.map,$bind(this,this.stopDrag));
+	ExtEventEmitter.onMove(this.map,$bind(this,this.mouseMove));
 	this.map.interactive = true;
 	this.addChild(this.map);
 	this.map.mask = this.mapMask;
@@ -1509,6 +1672,7 @@ states_LevelSelectState.prototype = $extend(GameState.prototype,{
 		Lambda.fold(ts,function(l,r) {
 			return r.succeededBy(l);
 		},this.tweener);
+		AudioManager.play("audio-santa");
 	}
 	,startDrag: function(e) {
 		this.dragging = true;
@@ -1537,12 +1701,14 @@ var states_LevelState = function(number,levelData) {
 	this.network = Network.fromJson(levelData);
 	this.network.position.set(0,75);
 	this.toolbox = Toolbox.fromJson(levelData);
-	this.toolbox.position.set(250,this.network.y + 600);
+	this.toolbox.position.set(50,this.network.y + 600);
 	this.initMenu();
 	this.addChild(this.titleText);
 	this.addChild(this.network);
 	this.addChild(this.toolbox);
 	this.addChild(this.menu);
+	AudioManager.stopAll();
+	AudioManager.loop("audio-level");
 };
 states_LevelState.__name__ = true;
 states_LevelState.__super__ = GameState;
@@ -1558,15 +1724,17 @@ states_LevelState.prototype = $extend(GameState.prototype,{
 	}
 	,initMenu: function() {
 		this.menu = new TypedSpriteGroup();
+		var buttonXStart = 600;
 		this.startStop = new StartStopButton(this.network,this.toolbox);
-		this.startStop.position.set(10,675);
-		this.back = GameState.makeButton("ph_back.png",function() {
+		this.startStop.position.set(buttonXStart,this.toolbox.y);
+		this.back = GameState.makeButton("ph_back-sign.png",function() {
 			Game.instance.switchState(Game.instance.startState);
 		});
-		this.resetButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_button.png"));
-		this.resetButton.position.set(10,10);
+		this.resetButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_reset.png"));
+		this.resetButton.position.set(this.startStop.x + 200,this.toolbox.y);
 		this.resetButton.interactive = true;
-		this.resetButton.on("mouseup",$bind(this,this.reset));
+		ExtEventEmitter.onRelease(this.resetButton,$bind(this,this.reset));
+		this.back.position.set(this.resetButton.x + 200,this.toolbox.y);
 		this.menu.addChild(this.startStop);
 		this.menu.addChild(this.resetButton);
 		this.menu.addChild(this.back);
@@ -1584,6 +1752,8 @@ var states_StartState = function() {
 	var select = GameState.makeButton("ph_levelSelect.png",$bind(this,this.toSelectScreen));
 	select.position = new PIXI.Point(0,100);
 	this.addChild(select);
+	AudioManager.stopAll();
+	AudioManager.loop("audio-menu");
 };
 states_StartState.__name__ = true;
 states_StartState.buttonTo = function(name) {
@@ -1632,13 +1802,23 @@ if(Array.prototype.map == null) Array.prototype.map = function(f) {
 	}
 	return a;
 };
+var __map_reserved = {}
 Assets.ASSET_DIR = "assets";
 Assets.FONT = "Mountains of Christmas";
+AudioManager.MENU = "audio-menu";
+AudioManager.LEVEL = "audio-level";
+AudioManager.CREDITS = "audio-credits";
+AudioManager.DOOR = "audio-door";
+AudioManager.DROP = "audio-drop";
+AudioManager.SANTA = "audio-santa";
+AudioManager.WIN = "audio-win";
+AudioManager.initialized = false;
 Debug.history = [];
 Debug.DEBUG_MODE = true;
 Dim.TOTAL_WIDTH = 800;
 Dim.LEVEL_TITLE_HEIGHT = 75;
 Dim.NETWORK_HEIGHT = 600;
+Dim.SIGN_WIDTH = 200;
 Dim.MENU_WIDTH = 200;
 Dim.MENU_PADDING = 10;
 Game.OFFSCREEN = -1000.0;
@@ -1647,8 +1827,10 @@ pixi_plugins_app_Application.AUTO = "auto";
 pixi_plugins_app_Application.RECOMMENDED = "recommended";
 pixi_plugins_app_Application.CANVAS = "canvas";
 pixi_plugins_app_Application.WEBGL = "webgl";
+Main.STAGE_WIDTH = 1200;
+Main.STAGE_HEIGHT = 900;
 js_Boot.__toStr = {}.toString;
 states_LevelSelectState.LEVEL_LAYOUT = "level_layout";
 states_StartState.BACK_TO_SPRITE = "ph_backToStart.png";
 Main.main();
-})(typeof console != "undefined" ? console : {log:function(){}});
+})(typeof console != "undefined" ? console : {log:function(){}}, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
