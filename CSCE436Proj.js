@@ -1,4 +1,4 @@
-(function (console, $global) { "use strict";
+(function (console) { "use strict";
 function $extend(from, fields) {
 	function Inherit() {} Inherit.prototype = from; var proto = new Inherit();
 	for (var name in fields) proto[name] = fields[name];
@@ -20,6 +20,12 @@ Assets.getSpriteURL = function(sprite) {
 };
 Assets.getTexture = function(url) {
 	return PIXI.Texture.fromImage("" + "assets" + "/sprites/" + url);
+};
+Assets.getTextures = function(urls) {
+	return urls.map(Assets.getTexture);
+};
+Assets.getClip = function(urls) {
+	return new PIXI.extras.MovieClip(urls.map(Assets.getTexture));
 };
 var AudioManager = function() { };
 AudioManager.__name__ = true;
@@ -62,7 +68,7 @@ AudioManager.initSound = function(sound) {
 	v;
 };
 var Bag = function(numPresents,baseX,baseY) {
-	PIXI.Sprite.call(this,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_bag.png"));
+	PIXI.Sprite.call(this,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "presentBagRedSmall.png"));
 	this.dragging = false;
 	this.basePos = new PIXI.Point(baseX,baseY);
 	this.posBeforeDrag = new PIXI.Point(0,0);
@@ -204,11 +210,22 @@ ExtEventEmitter.onMove = function(s,cb) {
 	s.on("mousemove",cb);
 	s.on("touchmove",cb);
 };
+ExtEventEmitter.onReleaseInside = function(s,cb) {
+	s.on("mouseup",cb);
+	s.on("touchend",cb);
+};
+ExtEventEmitter.onReleaseOutside = function(s,cb) {
+	s.on("mouseupoutside",cb);
+	s.on("touchendoutside",cb);
+};
 ExtEventEmitter.onRelease = function(s,cb) {
 	s.on("mouseup",cb);
-	s.on("mouseupoutside",cb);
 	s.on("touchend",cb);
+	s.on("mouseupoutside",cb);
 	s.on("touchendoutside",cb);
+};
+ExtEventEmitter.onOver = function(s,cb) {
+	s.on("mouseover",cb);
 };
 ExtEventEmitter.onOut = function(s,cb) {
 	s.on("mouseout",cb);
@@ -216,8 +233,8 @@ ExtEventEmitter.onOut = function(s,cb) {
 };
 ExtEventEmitter.onReleaseOrOut = function(s,cb) {
 	s.on("mouseup",cb);
-	s.on("mouseupoutside",cb);
 	s.on("touchend",cb);
+	s.on("mouseupoutside",cb);
 	s.on("touchendoutside",cb);
 	s.on("mouseout",cb);
 	s.on("touchout",cb);
@@ -309,6 +326,24 @@ GameState.makeButton = function(texture,trans) {
 	});
 	return b;
 };
+GameState.makeFancyButton = function(texture,textureOn,trans) {
+	var b = new TwoStateSprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + texture),PIXI.Texture.fromImage("" + "assets" + "/sprites/" + textureOn));
+	b.interactive = true;
+	b.defaultTextureChanges();
+	b.on("mouseup",function(e) {
+		if(b.clicked) {
+			b.setOff();
+			trans();
+		}
+	});
+	b.on("touchend",function(e) {
+		if(b.clicked) {
+			b.setOff();
+			trans();
+		}
+	});
+	return b;
+};
 GameState.__super__ = PIXI.Container;
 GameState.prototype = $extend(PIXI.Container.prototype,{
 	update: function() {
@@ -332,13 +367,13 @@ HxOverrides.iter = function(a) {
 		return this.arr[this.cur++];
 	}};
 };
-var Junction = function(texture) {
-	PIXI.Sprite.call(this,texture);
+var Junction = function(textures) {
+	PIXI.extras.MovieClip.call(this,textures);
 	this.inPipes = [];
 	this.outPipes = [];
 	this.presents = [];
 	this.presentsAtStart = [];
-	if(texture.baseTexture.hasLoaded) this.center(); else texture.baseTexture.once("loaded",$bind(this,this.center));
+	if(this.texture.baseTexture.hasLoaded) this.center(); else this.texture.baseTexture.once("loaded",$bind(this,this.center));
 };
 Junction.__name__ = true;
 Junction.fromJson = function(data) {
@@ -363,8 +398,8 @@ Junction.fromJson = function(data) {
 	});
 	return junction;
 };
-Junction.__super__ = PIXI.Sprite;
-Junction.prototype = $extend(PIXI.Sprite.prototype,{
+Junction.__super__ = PIXI.extras.MovieClip;
+Junction.prototype = $extend(PIXI.extras.MovieClip.prototype,{
 	preflow: function() {
 	}
 	,predispatch: function() {
@@ -583,15 +618,6 @@ pixi_plugins_app_Application.prototype = {
 		this._lastTime = new Date();
 		this._addStats();
 	}
-	,pauseRendering: function() {
-		window.onresize = null;
-		window.requestAnimationFrame(function() {
-		});
-	}
-	,resumeRendering: function() {
-		if(this.autoResize) window.onresize = $bind(this,this._onWindowResize);
-		window.requestAnimationFrame($bind(this,this._onRequestAnimationFrame));
-	}
 	,_onWindowResize: function(event) {
 		this.width = window.innerWidth;
 		this.height = window.innerHeight;
@@ -624,7 +650,6 @@ pixi_plugins_app_Application.prototype = {
 		ren = _this.createElement("div");
 		ren.style.position = "absolute";
 		ren.style.width = "76px";
-		ren.style.top = top + "px";
 		ren.style.right = "0px";
 		ren.style.background = "#CCCCC";
 		ren.style.backgroundColor = "#105CB6";
@@ -711,6 +736,7 @@ Network.fromJson = function(data) {
 	} catch( err ) {
 		if (err instanceof js__$Boot_HaxeError) err = err.val;
 		_$Error_Error_$Impl_$.report("Failed to load level " + Std.string(data.name) + "\n" + Std.string(err));
+		_$Error_Error_$Impl_$.report(err.stack);
 	}
 	var $it0 = network.junctions.iterator();
 	while( $it0.hasNext() ) {
@@ -864,8 +890,16 @@ var Pipe = function(source,destination,texture) {
 	this.destination = destination;
 	this.presents = [];
 	this.texture = texture;
-	if(texture.baseTexture.hasLoaded) this.drawPath(); else texture.baseTexture.once("loaded",function(e) {
-		_g.drawPath();
+	this.directionSign = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "right-small.png"));
+	this.addChild(this.directionSign);
+	if(texture.baseTexture.hasLoaded) {
+		if(this.directionSign.texture.baseTexture.hasLoaded) this.drawPath(); else this.directionSign.texture.baseTexture.once("loaded",function(e) {
+			_g.drawPath();
+		});
+	} else texture.baseTexture.once("loaded",function(e1) {
+		if(_g.directionSign.texture.baseTexture.hasLoaded) _g.drawPath(); else _g.directionSign.texture.baseTexture.once("loaded",function(e2) {
+			_g.drawPath();
+		});
 	});
 };
 Pipe.__name__ = true;
@@ -936,6 +970,7 @@ Pipe.prototype = $extend(TypedSpriteGroup.prototype,{
 			curX += incX;
 			curY += incY;
 		}
+		this.drawSign(angle);
 	}
 	,drawVerticalPath: function() {
 		var incY = this.texture.width;
@@ -951,14 +986,30 @@ Pipe.prototype = $extend(TypedSpriteGroup.prototype,{
 			this.addChild(s);
 			curY += incY;
 		}
+		if(this.destination.y > this.source.y) this.drawSign(Math.PI / 2); else this.drawSign(-Math.PI / 2);
+	}
+	,drawSign: function(angle) {
+		this.directionSign.pivot.set(this.directionSign.texture.width / 2,this.directionSign.texture.height / 2);
+		var midX = (this.destination.x + this.source.x) / 2;
+		var midY = (this.destination.y + this.source.y) / 2;
+		var offset = 25;
+		midX += offset * Math.cos(angle - Math.PI / 2);
+		midY += offset * Math.sin(angle - Math.PI / 2);
+		this.directionSign.rotation = angle;
+		this.directionSign.position.set(midX,midY);
 	}
 	,__class__: Pipe
 });
-var Present = function() {
-	PIXI.Sprite.call(this,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_apple.png"));
+var Present = function(tex) {
+	if(tex == null) PIXI.Sprite.call(this,PIXI.Texture.fromImage(Assets.getSpriteURL(Present.randomPresentImage()))); else PIXI.Sprite.call(this,tex);
+	this.width = 30;
+	this.height = 30;
 	if(this.texture.baseTexture.hasLoaded) this.center(); else this.texture.baseTexture.on("loaded",$bind(this,this.center));
 };
 Present.__name__ = true;
+Present.randomPresentImage = function() {
+	return Present.SPRITES[Std.random(Present.SPRITES.length)];
+};
 Present.__super__ = PIXI.Sprite;
 Present.prototype = $extend(PIXI.Sprite.prototype,{
 	moveTo: function(dest,duration) {
@@ -981,10 +1032,10 @@ var StartStopButton = function(network,toolbox) {
 	this.network = network;
 	this.toolbox = toolbox;
 	this.startButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_start.png"));
-	ExtEventEmitter.onRelease(this.startButton,$bind(this,this.start));
+	ExtEventEmitter.onReleaseInside(this.startButton,$bind(this,this.start));
 	this.startButton.interactive = true;
 	this.stopButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_stop.png"));
-	ExtEventEmitter.onRelease(this.stopButton,$bind(this,this.stop));
+	ExtEventEmitter.onReleaseInside(this.stopButton,$bind(this,this.stop));
 	this.stopButton.interactive = true;
 	this.stopButton.visible = false;
 	this.addChild(this.startButton);
@@ -1018,6 +1069,9 @@ Std.parseInt = function(x) {
 	if(isNaN(v)) return null;
 	return v;
 };
+Std.random = function(x) {
+	if(x <= 0) return 0; else return Math.floor(Math.random() * x);
+};
 var Toolbox = function() {
 	PIXI.Container.call(this);
 	this.bags = [];
@@ -1049,6 +1103,7 @@ Toolbox.fromJson = function(data) {
 	} catch( err ) {
 		if (err instanceof js__$Boot_HaxeError) err = err.val;
 		_$Error_Error_$Impl_$.report("Failed to load toolbox " + Std.string(data.name) + "\n" + Std.string(err));
+		_$Error_Error_$Impl_$.report(err.stack);
 	}
 	toolbox.activate();
 	return toolbox;
@@ -1129,6 +1184,45 @@ Tweener.prototype = $extend(PIXI.ticker.Ticker.prototype,{
 		}
 	}
 	,__class__: Tweener
+});
+var TwoStateSprite = function(off,on) {
+	PIXI.Sprite.call(this,off);
+	this.onTexture = on;
+	this.offTexture = off;
+};
+TwoStateSprite.__name__ = true;
+TwoStateSprite.__super__ = PIXI.Sprite;
+TwoStateSprite.prototype = $extend(PIXI.Sprite.prototype,{
+	defaultTextureChanges: function() {
+		var _g = this;
+		this.on("mousedown",function(e) {
+			_g.setOn();
+		});
+		this.on("touchstart",function(e) {
+			_g.setOn();
+		});
+		this.on("mouseout",function(e1) {
+			_g.setOff();
+		});
+		this.on("touchout",function(e1) {
+			_g.setOff();
+		});
+		this.on("mouseupoutside",function(e2) {
+			_g.setOff();
+		});
+		this.on("touchendoutside",function(e2) {
+			_g.setOff();
+		});
+	}
+	,setOff: function() {
+		this.clicked = false;
+		this.texture = this.offTexture;
+	}
+	,setOn: function() {
+		this.clicked = true;
+		this.texture = this.onTexture;
+	}
+	,__class__: TwoStateSprite
 });
 var Type = function() { };
 Type.__name__ = true;
@@ -1359,7 +1453,7 @@ js_Boot.__isNativeObj = function(o) {
 	return js_Boot.__nativeClassName(o) != null;
 };
 js_Boot.__resolveNativeClass = function(name) {
-	return $global[name];
+	return (Function("return typeof " + name + " != \"undefined\" ? " + name + " : null"))();
 };
 var js_Browser = function() { };
 js_Browser.__name__ = true;
@@ -1376,8 +1470,12 @@ js_Browser.getLocalStorage = function() {
 js_Browser.alert = function(v) {
 	window.alert(js_Boot.__string_rec(v,""));
 };
-var junctions_StandardJunction = function(value) {
-	Junction.call(this,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_node.png"));
+var junctions_StandardJunction = function(value,textures) {
+	if(textures != null) Junction.call(this,textures); else {
+		Junction.call(this,["intPointa.png","intPointb.png"].map(Assets.getTexture));
+		this.play();
+		this.animationSpeed = .015;
+	}
 	var _g = 0;
 	while(_g < value) {
 		var i = _g++;
@@ -1435,16 +1533,16 @@ junctions_StandardJunction.prototype = $extend(Junction.prototype,{
 				var prevBag = this.removeBag();
 				if(prevBag != null) prevBag.returnToToolbox();
 				this.bag = b;
-				var _g1 = 0;
-				var _g = b.capacity;
-				while(_g1 < _g) {
-					var i = _g1++;
-					this.presentsAtStart.push(new Present());
+				var $it0 = b.presents.iterator();
+				while( $it0.hasNext() ) {
+					var p = $it0.next();
+					this.presentsAtStart.push(new Present(p.texture));
 				}
 				this.refillPresents();
 				(js_Boot.__cast(Game.instance.state , states_LevelState)).network.addPresentsFor(this);
 				this.positionPresents();
 			}
+			this.gotoAndStop(1);
 		}
 	}
 	,removeBag: function() {
@@ -1454,6 +1552,7 @@ junctions_StandardJunction.prototype = $extend(Junction.prototype,{
 			this.presentsAtStart.pop();
 		}
 		this.bag = null;
+		this.play();
 		return b;
 	}
 	,postflow: function() {
@@ -1464,13 +1563,29 @@ junctions_StandardJunction.prototype = $extend(Junction.prototype,{
 	,__class__: junctions_StandardJunction
 });
 var junctions_GoalJunction = function(goal) {
-	junctions_StandardJunction.call(this,0);
-	this.texture = PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_goal.png");
+	junctions_StandardJunction.call(this,0,Assets.getTextures((function($this) {
+		var $r;
+		var _g = [];
+		{
+			var _g1 = 0;
+			while(_g1 < 6) {
+				var i = _g1++;
+				_g.push("h1-" + (6 - i) + ".png");
+			}
+		}
+		$r = _g;
+		return $r;
+	}(this))));
+	this.scale = new PIXI.Point(0.1854,0.1854);
 	this.goalPresents = [];
 	this.goal = goal;
+	this.textWrapper = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "callout.png"));
+	this.textWrapper.position.set(810,0);
+	this.textWrapper.scale = new PIXI.Point(5.3937432578209279,5.3937432578209279);
 	this.goalText = new PIXI.Text(Std.string(this.goal));
-	this.goalText.position.set(10,10);
-	this.addChild(this.goalText);
+	this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+	this.textWrapper.addChild(this.goalText);
+	this.addChild(this.textWrapper);
 	if(this.texture.baseTexture.hasLoaded) this.center(); else this.texture.baseTexture.on("loaded",$bind(this,this.center));
 };
 junctions_GoalJunction.__name__ = true;
@@ -1487,8 +1602,14 @@ junctions_GoalJunction.prototype = $extend(junctions_StandardJunction.prototype,
 			this.goalPresents.push(present);
 			present.position.set(-1000.0,-1000.0);
 		}
-		if(!satisfiedBefore && this.goalPresents.length == this.goal) AudioManager.play("audio-door");
+		if(!satisfiedBefore && this.goalPresents.length == this.goal) {
+			AudioManager.play("audio-door");
+			this.loop = false;
+			this.animationSpeed = .09;
+			this.play();
+		}
 		this.goalText.text = Std.string(this.goal - this.goalPresents.length);
+		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
 	}
 	,canAttachBag: function(b) {
 		return false;
@@ -1497,14 +1618,20 @@ junctions_GoalJunction.prototype = $extend(junctions_StandardJunction.prototype,
 		junctions_StandardJunction.prototype.postflow.call(this);
 		while(this.goalPresents.length > 0) this.goalPresents.pop();
 		this.goalText.text = Std.string(this.goal - this.goalPresents.length);
+		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+		this.gotoAndStop(0);
 	}
 	,setGoalText: function() {
 		this.goalText.text = Std.string(this.goal - this.goalPresents.length);
+		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+	}
+	,centerGoalText: function() {
+		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
 	}
 	,__class__: junctions_GoalJunction
 });
 var pipes_FlippablePipe = function(source,destination,partner) {
-	Pipe.call(this,source,destination,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_pipe-flip.png"));
+	Pipe.call(this,source,destination,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "pipe-flippable.png"));
 	if(partner == null) {
 		this.partner = destination.connectTo(source,pipes_FlippablePipe,[this]);
 		this.showPipe();
@@ -1514,7 +1641,12 @@ var pipes_FlippablePipe = function(source,destination,partner) {
 		this.hidePipe();
 		this.primary = false;
 	}
-	ExtEventEmitter.onRelease(this,$bind(this,this.toggle));
+	this.directionSign.texture = PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "right-small-no-snow.png");
+	if(!this.primary) {
+		this.partner.directionSign.position = this.directionSign.position.clone();
+		this.partner.directionSign.scale.set(1,-1);
+	}
+	ExtEventEmitter.onReleaseInside(this,$bind(this,this.toggle));
 };
 pipes_FlippablePipe.__name__ = true;
 pipes_FlippablePipe.__super__ = Pipe;
@@ -1548,7 +1680,7 @@ pipes_FlippablePipe.prototype = $extend(Pipe.prototype,{
 	,__class__: pipes_FlippablePipe
 });
 var pipes_StandardPipe = function(source,destination) {
-	Pipe.call(this,source,destination,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_pipe.png"));
+	Pipe.call(this,source,destination,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "pipe.png"));
 };
 pipes_StandardPipe.__name__ = true;
 pipes_StandardPipe.__super__ = Pipe;
@@ -1578,10 +1710,12 @@ var states_LevelSelectState = function() {
 		Game.instance.switchState(Game.instance.startState);
 	});
 	this.addChild(back);
-	this.santa = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_santa.png"));
+	this.santa = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "Santa.png"));
+	this.santa.width = 100;
+	this.santa.height = 100;
 	this.santa.texture.on("loaded",function(e) {
 		_g.placeSantaAt(Game.instance.getLevel());
-		_g.santa.pivot.set(_g.santa.texture.width / 2,_g.santa.texture.height / 2);
+		_g.santa.pivot.set(_g.santa.width / 2,_g.santa.height / 2);
 	});
 	var loader = new PIXI.loaders.Loader();
 	loader.add("levels","" + "assets" + "/" + "level_layout" + ".json",null,$bind(this,this.addLevels));
@@ -1733,7 +1867,7 @@ states_LevelState.prototype = $extend(GameState.prototype,{
 		this.resetButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_reset.png"));
 		this.resetButton.position.set(this.startStop.x + 200,this.toolbox.y);
 		this.resetButton.interactive = true;
-		ExtEventEmitter.onRelease(this.resetButton,$bind(this,this.reset));
+		ExtEventEmitter.onReleaseInside(this.resetButton,$bind(this,this.reset));
 		this.back.position.set(this.resetButton.x + 200,this.toolbox.y);
 		this.menu.addChild(this.startStop);
 		this.menu.addChild(this.resetButton);
@@ -1747,10 +1881,15 @@ states_LevelState.prototype = $extend(GameState.prototype,{
 });
 var states_StartState = function() {
 	GameState.call(this);
-	var start = GameState.makeButton("ph_startGame.png",$bind(this,this.toLastLevel));
+	var background = new PIXI.extras.MovieClip(["title1.png","title2.png","title3.png","title4.png"].map(Assets.getTexture));
+	background.animationSpeed = .05;
+	this.addChild(background);
+	background.play();
+	var start = GameState.makeFancyButton("sb1.png","sb2.png",$bind(this,this.toLastLevel));
+	start.position.set(150,730);
 	this.addChild(start);
-	var select = GameState.makeButton("ph_levelSelect.png",$bind(this,this.toSelectScreen));
-	select.position = new PIXI.Point(0,100);
+	var select = GameState.makeFancyButton("selB1.png","selB2.png",$bind(this,this.toSelectScreen));
+	select.position.set(770,730);
 	this.addChild(select);
 	AudioManager.stopAll();
 	AudioManager.loop("audio-menu");
@@ -1829,8 +1968,10 @@ pixi_plugins_app_Application.CANVAS = "canvas";
 pixi_plugins_app_Application.WEBGL = "webgl";
 Main.STAGE_WIDTH = 1200;
 Main.STAGE_HEIGHT = 900;
+Present.SPRITES = ["gift1b.png","gift1g.png","gift1r.png"];
 js_Boot.__toStr = {}.toString;
+junctions_GoalJunction.SCALE = 0.1854;
 states_LevelSelectState.LEVEL_LAYOUT = "level_layout";
 states_StartState.BACK_TO_SPRITE = "ph_backToStart.png";
 Main.main();
-})(typeof console != "undefined" ? console : {log:function(){}}, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
+})(typeof console != "undefined" ? console : {log:function(){}});
