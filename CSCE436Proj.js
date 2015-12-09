@@ -160,6 +160,7 @@ Bag.prototype = $extend(PIXI.Sprite.prototype,{
 var Debug = function() { };
 Debug.__name__ = true;
 Debug.log = function(obj) {
+	return;
 	var msg = Std.string(obj);
 	var div = window.document.getElementById("debug");
 	if(div == null) {
@@ -178,6 +179,7 @@ Debug.log = function(obj) {
 	Debug.history.push(msg);
 };
 Debug.alert = function(obj) {
+	return;
 	js_Browser.alert(Std.string(obj));
 };
 var Dim = function() { };
@@ -670,12 +672,13 @@ var Main = function() {
 	this.width = 1200;
 	this.height = 900;
 	pixi_plugins_app_Application.prototype.start.call(this);
-	this.resize();
 	window.onresize = $bind(this,this.resize);
 	AudioManager.init();
-	var game = new Game();
-	this.stage.addChild(game);
-	this.onUpdate = $bind(game,game.update);
+	this.game = new Game();
+	this.stage.addChild(this.game);
+	this.onUpdate = ($_=this.game,$bind($_,$_.update));
+	this.resize();
+	this.renderer.backgroundColor = 13078;
 };
 Main.__name__ = true;
 Main.main = function() {
@@ -696,6 +699,10 @@ Main.prototype = $extend(pixi_plugins_app_Application.prototype,{
 		w = Math.floor(1200 * ratio);
 		h = Math.floor(900 * ratio);
 		this.renderer.resize(w,h);
+		if(this.game != null) {
+			this.game.x = -(1200 - w) / 2;
+			this.game.y = -(900 - h) / 2;
+		}
 	}
 	,__class__: Main
 });
@@ -708,6 +715,7 @@ var Network = function() {
 	this.addChild(this.pipes);
 	this.addChild(this.junctions);
 	this.addChild(this.presents);
+	this.cycle = 0;
 	this.tick = 0;
 };
 Network.__name__ = true;
@@ -857,12 +865,17 @@ Network.prototype = $extend(PIXI.Container.prototype,{
 		var $it0 = this.junctions.iterator();
 		while( $it0.hasNext() ) {
 			var junction = $it0.next();
-			if(junction.getBounds().contains(pos.x + junction.pivot.x,pos.y + junction.pivot.y)) return junction;
+			var b = junction.getBounds();
+			var hitbox = new PIXI.Rectangle(b.x - 25,b.y - 25,b.width + 50,b.height + 50);
+			if(hitbox.contains(pos.x + junction.pivot.x,pos.y + junction.pivot.y)) return junction;
 		}
 		return null;
 	}
 	,addPresentsFor: function(j) {
 		j.addPresentsToGroup(this.presents);
+	}
+	,get_cyclesLeft: function() {
+		if(this.maxCycles - this.cycle >= 0) return this.maxCycles - this.cycle; else return 0;
 	}
 	,__class__: Network
 });
@@ -1002,8 +1015,6 @@ Pipe.prototype = $extend(TypedSpriteGroup.prototype,{
 });
 var Present = function(tex) {
 	if(tex == null) PIXI.Sprite.call(this,PIXI.Texture.fromImage(Assets.getSpriteURL(Present.randomPresentImage()))); else PIXI.Sprite.call(this,tex);
-	this.width = 30;
-	this.height = 30;
 	if(this.texture.baseTexture.hasLoaded) this.center(); else this.texture.baseTexture.on("loaded",$bind(this,this.center));
 };
 Present.__name__ = true;
@@ -1027,10 +1038,11 @@ Present.prototype = $extend(PIXI.Sprite.prototype,{
 	}
 	,__class__: Present
 });
-var StartStopButton = function(network,toolbox) {
+var StartStopButton = function(network,toolbox,otherButtons) {
 	PIXI.Container.call(this);
 	this.network = network;
 	this.toolbox = toolbox;
+	this.otherButtons = otherButtons;
 	this.startButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_start.png"));
 	ExtEventEmitter.onReleaseInside(this.startButton,$bind(this,this.start));
 	this.startButton.interactive = true;
@@ -1049,12 +1061,22 @@ StartStopButton.prototype = $extend(PIXI.Container.prototype,{
 		this.toolbox.deactivate();
 		this.startButton.visible = false;
 		this.stopButton.visible = true;
+		var $it0 = $iterator(this.otherButtons)();
+		while( $it0.hasNext() ) {
+			var btn = $it0.next();
+			btn.interactive = false;
+		}
 	}
 	,stop: function(e) {
 		this.network.stopFlow();
 		this.toolbox.activate();
 		this.startButton.visible = true;
 		this.stopButton.visible = false;
+		var $it0 = $iterator(this.otherButtons)();
+		while( $it0.hasNext() ) {
+			var btn = $it0.next();
+			btn.interactive = true;
+		}
 	}
 	,__class__: StartStopButton
 });
@@ -1585,6 +1607,25 @@ var junctions_GoalJunction = function(goal) {
 	this.goalText = new PIXI.Text(Std.string(this.goal));
 	this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
 	this.textWrapper.addChild(this.goalText);
+	this.smoke = Assets.getClip((function($this) {
+		var $r;
+		var _g11 = [];
+		{
+			var _g2 = 1;
+			while(_g2 < 5) {
+				var i1 = _g2++;
+				_g11.push("smoke" + i1 + ".png");
+			}
+		}
+		$r = _g11;
+		return $r;
+	}(this)));
+	this.addChild(this.smoke);
+	this.smoke.scale.set(5.3937432578209279,5.3937432578209279);
+	this.smoke.position.set(0,-440);
+	this.smoke.animationSpeed = .05;
+	this.smoke.alpha = .5;
+	this.smoke.play();
 	this.addChild(this.textWrapper);
 	if(this.texture.baseTexture.hasLoaded) this.center(); else this.texture.baseTexture.on("loaded",$bind(this,this.center));
 };
@@ -1692,7 +1733,7 @@ var states_LevelSelectState = function() {
 	GameState.call(this);
 	this.mapMask = new PIXI.Graphics();
 	this.mapMask.beginFill();
-	this.mapMask.drawRect(0,0,1000,1000);
+	this.mapMask.drawRect(0,0,1200,900);
 	this.mapMask.endFill();
 	this.addChild(this.mapMask);
 	this.map = new PIXI.Container();
@@ -1775,6 +1816,15 @@ states_LevelSelectState.prototype = $extend(GameState.prototype,{
 				this.path.push(level.path);
 				this.map.addChild(sprite);
 			}
+			var _g2 = 0;
+			var _g11 = array.sprites;
+			while(_g2 < _g11.length) {
+				var misc = _g11[_g2];
+				++_g2;
+				var sprite1 = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + misc.image));
+				sprite1.position.set(misc.x,misc.y);
+				this.map.addChild(sprite1);
+			}
 			this.map.addChild(this.santa);
 			this.placeSantaAt(Game.instance.getLevel());
 		} catch( err ) {
@@ -1820,8 +1870,8 @@ states_LevelSelectState.prototype = $extend(GameState.prototype,{
 		if(this.dragging) {
 			this.map.position.x += p.x - this.dragPoint.x;
 			this.map.position.y += p.y - this.dragPoint.y;
-			if(this.map.position.x > 0) this.map.position.x = 0; else if(this.map.position.x < -1400) this.map.position.x = -1400;
-			if(this.map.position.y > 0) this.map.position.y = 0; else if(this.map.position.y < -1400) this.map.position.y = -1400;
+			if(this.map.position.x > 0) this.map.position.x = 0; else if(this.map.position.x < 1200 - this.map.width) this.map.position.x = 1200 - this.map.width;
+			if(this.map.position.y > 0) this.map.position.y = 0; else if(this.map.position.y < 900 - this.map.height) this.map.position.y = 900 - this.map.height;
 			this.dragPoint = p;
 		} else {
 		}
@@ -1830,17 +1880,23 @@ states_LevelSelectState.prototype = $extend(GameState.prototype,{
 });
 var states_LevelState = function(number,levelData) {
 	GameState.call(this);
-	this.titleText = new PIXI.Text(levelData.name,{ font : "36px " + "Mountains of Christmas", fill : "0", align : "center"});
+	this.titleText = new PIXI.Text(levelData.name,{ font : "52px " + "Mountains of Christmas", fill : "0", align : "center"});
+	this.titleText.position.set(10,10);
 	this.level = number;
 	this.network = Network.fromJson(levelData);
 	this.network.position.set(0,75);
 	this.toolbox = Toolbox.fromJson(levelData);
 	this.toolbox.position.set(50,this.network.y + 600);
+	this.backdrop = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "inGameBackground.png"));
 	this.initMenu();
+	this.cycles = new PIXI.Text("Cycles: ",{ font : "32px " + "Mountains of Christmas", fill : "0", align : "center"});
+	this.cycles.position.set(this.startStop.x,this.startStop.y - 50);
+	this.addChild(this.backdrop);
 	this.addChild(this.titleText);
 	this.addChild(this.network);
 	this.addChild(this.toolbox);
 	this.addChild(this.menu);
+	this.addChild(this.cycles);
 	AudioManager.stopAll();
 	AudioManager.loop("audio-level");
 };
@@ -1849,6 +1905,7 @@ states_LevelState.__super__ = GameState;
 states_LevelState.prototype = $extend(GameState.prototype,{
 	update: function() {
 		GameState.prototype.update.call(this);
+		this.cycles.text = "Cycles: " + this.network.get_cyclesLeft();
 		if(this.network.currentlyFlowing) this.network.nextFlowTick(); else if(this.network.won) {
 			Debug.log("Going to level select from " + this.level);
 			var levelSelect = Game.instance.selectState;
@@ -1859,12 +1916,12 @@ states_LevelState.prototype = $extend(GameState.prototype,{
 	,initMenu: function() {
 		this.menu = new TypedSpriteGroup();
 		var buttonXStart = 600;
-		this.startStop = new StartStopButton(this.network,this.toolbox);
-		this.startStop.position.set(buttonXStart,this.toolbox.y);
 		this.back = GameState.makeButton("ph_back-sign.png",function() {
 			Game.instance.switchState(Game.instance.startState);
 		});
 		this.resetButton = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_reset.png"));
+		this.startStop = new StartStopButton(this.network,this.toolbox,[this.resetButton]);
+		this.startStop.position.set(buttonXStart,this.toolbox.y);
 		this.resetButton.position.set(this.startStop.x + 200,this.toolbox.y);
 		this.resetButton.interactive = true;
 		ExtEventEmitter.onReleaseInside(this.resetButton,$bind(this,this.reset));
@@ -1886,9 +1943,11 @@ var states_StartState = function() {
 	this.addChild(background);
 	background.play();
 	var start = GameState.makeFancyButton("sb1.png","sb2.png",$bind(this,this.toLastLevel));
-	start.position.set(150,730);
+	start.position.set(180,740);
+	start.pivot.set(start.width / 2,start.height / 2);
 	this.addChild(start);
 	var select = GameState.makeFancyButton("selB1.png","selB2.png",$bind(this,this.toSelectScreen));
+	select.pivot.set(select.width / 2,select.height / 2);
 	select.position.set(770,730);
 	this.addChild(select);
 	AudioManager.stopAll();
@@ -1953,7 +2012,7 @@ AudioManager.SANTA = "audio-santa";
 AudioManager.WIN = "audio-win";
 AudioManager.initialized = false;
 Debug.history = [];
-Debug.DEBUG_MODE = true;
+Debug.DEBUG_MODE = false;
 Dim.TOTAL_WIDTH = 800;
 Dim.LEVEL_TITLE_HEIGHT = 75;
 Dim.NETWORK_HEIGHT = 600;
@@ -1968,7 +2027,8 @@ pixi_plugins_app_Application.CANVAS = "canvas";
 pixi_plugins_app_Application.WEBGL = "webgl";
 Main.STAGE_WIDTH = 1200;
 Main.STAGE_HEIGHT = 900;
-Present.SPRITES = ["gift1b.png","gift1g.png","gift1r.png"];
+Present.MAX_DEVIATION = 4;
+Present.SPRITES = ["gift1b-hc.png","gift1g-hc.png","gift1r-hc.png"];
 js_Boot.__toStr = {}.toString;
 junctions_GoalJunction.SCALE = 0.1854;
 states_LevelSelectState.LEVEL_LAYOUT = "level_layout";
