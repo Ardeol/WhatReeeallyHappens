@@ -1,4 +1,4 @@
-(function (console) { "use strict";
+(function (console, $global) { "use strict";
 function $extend(from, fields) {
 	function Inherit() {} Inherit.prototype = from; var proto = new Inherit();
 	for (var name in fields) proto[name] = fields[name];
@@ -519,6 +519,7 @@ var LevelSprite = function(num,sprite) {
 	var _g = this;
 	PIXI.Sprite.call(this,PIXI.Texture.fromImage("" + "assets" + "/sprites/" + sprite));
 	this.number = num;
+	this.numText = new PIXI.Text(Std.string(this.number),{ font : "52px ${Assets.FONT}", fill : "0", align : "center"});
 	this.interactive = true;
 	this.on("mousedown",function(e) {
 		GameState.toLevel(_g.number);
@@ -620,6 +621,15 @@ pixi_plugins_app_Application.prototype = {
 		this._lastTime = new Date();
 		this._addStats();
 	}
+	,pauseRendering: function() {
+		window.onresize = null;
+		window.requestAnimationFrame(function() {
+		});
+	}
+	,resumeRendering: function() {
+		if(this.autoResize) window.onresize = $bind(this,this._onWindowResize);
+		window.requestAnimationFrame($bind(this,this._onRequestAnimationFrame));
+	}
 	,_onWindowResize: function(event) {
 		this.width = window.innerWidth;
 		this.height = window.innerHeight;
@@ -652,6 +662,7 @@ pixi_plugins_app_Application.prototype = {
 		ren = _this.createElement("div");
 		ren.style.position = "absolute";
 		ren.style.width = "76px";
+		ren.style.top = top + "px";
 		ren.style.right = "0px";
 		ren.style.background = "#CCCCC";
 		ren.style.backgroundColor = "#105CB6";
@@ -1475,7 +1486,7 @@ js_Boot.__isNativeObj = function(o) {
 	return js_Boot.__nativeClassName(o) != null;
 };
 js_Boot.__resolveNativeClass = function(name) {
-	return (Function("return typeof " + name + " != \"undefined\" ? " + name + " : null"))();
+	return $global[name];
 };
 var js_Browser = function() { };
 js_Browser.__name__ = true;
@@ -1603,9 +1614,9 @@ var junctions_GoalJunction = function(goal) {
 	this.goal = goal;
 	this.textWrapper = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "callout.png"));
 	this.textWrapper.position.set(810,0);
-	this.textWrapper.scale = new PIXI.Point(5.3937432578209279,5.3937432578209279);
+	this.textWrapper.scale = new PIXI.Point(5.39374325782092789,5.39374325782092789);
 	this.goalText = new PIXI.Text(Std.string(this.goal));
-	this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+	this.goalText.position.set(72 - this.goalText.width * 5.39374325782092789 / 2,6);
 	this.textWrapper.addChild(this.goalText);
 	this.smoke = Assets.getClip((function($this) {
 		var $r;
@@ -1621,7 +1632,7 @@ var junctions_GoalJunction = function(goal) {
 		return $r;
 	}(this)));
 	this.addChild(this.smoke);
-	this.smoke.scale.set(5.3937432578209279,5.3937432578209279);
+	this.smoke.scale.set(5.39374325782092789,5.39374325782092789);
 	this.smoke.position.set(0,-440);
 	this.smoke.animationSpeed = .05;
 	this.smoke.alpha = .5;
@@ -1650,7 +1661,7 @@ junctions_GoalJunction.prototype = $extend(junctions_StandardJunction.prototype,
 			this.play();
 		}
 		this.goalText.text = Std.string(this.goal - this.goalPresents.length);
-		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+		this.goalText.position.set(72 - this.goalText.width * 5.39374325782092789 / 2,6);
 	}
 	,canAttachBag: function(b) {
 		return false;
@@ -1659,15 +1670,15 @@ junctions_GoalJunction.prototype = $extend(junctions_StandardJunction.prototype,
 		junctions_StandardJunction.prototype.postflow.call(this);
 		while(this.goalPresents.length > 0) this.goalPresents.pop();
 		this.goalText.text = Std.string(this.goal - this.goalPresents.length);
-		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+		this.goalText.position.set(72 - this.goalText.width * 5.39374325782092789 / 2,6);
 		this.gotoAndStop(0);
 	}
 	,setGoalText: function() {
 		this.goalText.text = Std.string(this.goal - this.goalPresents.length);
-		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+		this.goalText.position.set(72 - this.goalText.width * 5.39374325782092789 / 2,6);
 	}
 	,centerGoalText: function() {
-		this.goalText.position.set(72 - this.goalText.width * 5.3937432578209279 / 2,6);
+		this.goalText.position.set(72 - this.goalText.width * 5.39374325782092789 / 2,6);
 	}
 	,__class__: junctions_GoalJunction
 });
@@ -1743,13 +1754,12 @@ var states_LevelSelectState = function() {
 	this.map.interactive = true;
 	this.addChild(this.map);
 	this.map.mask = this.mapMask;
-	this.background = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "ph_background.png"));
-	this.background.width = 1400;
-	this.background.height = 1400;
+	this.background = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "expanded.png"));
 	this.map.addChild(this.background);
-	var back = GameState.makeButton("ph_back.png",function() {
+	var back = GameState.makeButton("left-small-no-snow.png",function() {
 		Game.instance.switchState(Game.instance.startState);
 	});
+	back.pivot.set(back.width / 2,back.height / 2);
 	this.addChild(back);
 	this.santa = new PIXI.Sprite(PIXI.Texture.fromImage("" + "assets" + "/sprites/" + "Santa.png"));
 	this.santa.width = 100;
@@ -1758,6 +1768,7 @@ var states_LevelSelectState = function() {
 		_g.placeSantaAt(Game.instance.getLevel());
 		_g.santa.pivot.set(_g.santa.width / 2,_g.santa.height / 2);
 	});
+	this.santa.interactive = false;
 	var loader = new PIXI.loaders.Loader();
 	loader.add("levels","" + "assets" + "/" + "level_layout" + ".json",null,$bind(this,this.addLevels));
 	loader.load();
@@ -2034,4 +2045,4 @@ junctions_GoalJunction.SCALE = 0.1854;
 states_LevelSelectState.LEVEL_LAYOUT = "level_layout";
 states_StartState.BACK_TO_SPRITE = "ph_backToStart.png";
 Main.main();
-})(typeof console != "undefined" ? console : {log:function(){}});
+})(typeof console != "undefined" ? console : {log:function(){}}, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);

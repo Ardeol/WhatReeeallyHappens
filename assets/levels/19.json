@@ -1,0 +1,62 @@
+{
+    "name": "(19) The Pentagon",
+    "maxCycles": 5,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 100,
+        "y": 225
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 400,
+        "y": 225
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 125,
+        "y": 400
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 6,
+        "x": 250,
+        "y": 100
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 3,
+        "x": 375,
+        "y": 400
+    } ],
+    "pipes": [ {
+		"type": "standard",
+		"source": 0,
+		"dest": 3
+	}, {
+        "type": "flippable",
+        "source": 0,
+        "dest": 1
+    }, {
+        "type": "standard",
+        "source": 0,
+        "dest": 2
+    }, {
+        "type": "standard",
+        "source": 1,
+        "dest": 3
+    }, {
+        "type": "flippable",
+        "source": 1,
+        "dest": 4
+    }, {
+        "type": "flippable",
+        "source": 2,
+        "dest": 4
+    }, {
+        "type": "standard",
+        "source": 4,
+        "dest": 0
+    } ],
+    "toolbox": [2, 6, 3]
+}

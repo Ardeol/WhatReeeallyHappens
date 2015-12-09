@@ -1,34 +1,22 @@
 {
-    "name": "(11) Combining What You Know",
+    "name": "Level 9",
     "maxCycles": 1,
     "junctions": [ {
         "type": "standard",
         "value": 0,
         "x": 100,
-        "y": 200
+        "y": 100
     }, {
         "type": "standard",
         "value": 0,
-        "x": 350,
-        "y": 150
+        "x": 250,
+        "y": 325
     }, {
         "type": "goal",
         "value": 0,
-        "goal": 2,
-        "x": 100,
-        "y": 400
-    }, {
-        "type": "goal",
-        "value": 0,
-        "goal": 5,
+        "goal": 6,
         "x": 400,
-        "y": 350
-    }, {
-        "type": "goal",
-        "value": 0,
-        "goal": 3,
-        "x": 600,
-        "y": 200
+        "y": 100
     } ],
     "pipes": [ {
 		"type": "standard",
@@ -36,16 +24,8 @@
 		"dest": 2
 	}, {
         "type": "standard",
-        "source": 0,
-        "dest": 3
-    }, {
-        "type": "standard",
         "source": 1,
-        "dest": 3
-    }, {
-        "type": "standard",
-        "source": 1,
-        "dest": 4
+        "dest": 2
     } ],
-    "toolbox": [4, 6, 8]
+    "toolbox": [7, 2, 3, 5, 4]
 }

@@ -1,50 +1,124 @@
 { 
   "levels": [ {
     "number" : 1,
-    "image": "ph_level_0.png",
-    "x" : 100,
-    "y" : 100,
+    "image": "n1small.png",
+    "x" : 50,
+    "y" : 450,
 
     "path": [ {
         "x": 0,
-        "y": 200
-        }, {
-        "x": 50,
-        "y": 200
+        "y": 500
         }]
   }, {
     "number" : 2,
-    "image": "ph_level_1.png",
-    "x" : 200,
-    "y" : 100,
+    "image": "n1small.png",
+    "x" : 300,
+    "y" : 650,
     "path": [ {
-        "x": 150,
-        "y": 200
+        "x": 200,
+        "y": 620
       }]
   }, {
     "number" : 3,
-    "image": "ph_level_2.png",
-    "x" : 300,
-    "y" : 150,
+    "image": "n2small.png",
+    "x" : 450,
+    "y" : 550,
     "path": [ {
-        "x": 150,
-        "y": 250   
+        "x": 280,
+        "y": 620   
+    }, {
+      "x": 400,
+      "y": 580
     }]
   }, {
     "number" : 4,
-    "image": "ph_level_1.png",
-    "x" : 400,
-    "y" : 250,
+    "image": "n2small.png",
+    "x" : 600,
+    "y" : 450,
+    "path": [{
+      "x": 550,
+      "y": 480
+    }]
+  }, {
+    "number" : 5,
+    "image": "n3small.png",
+    "x" : 725,
+    "y" : 325,
     "path": [ {
-        "x": 150,
-        "y": 350
-        }, {
-        "x": 250,
-        "y": 350   
-        }, {
-        "x": 350,
+        "x": 750,
         "y": 350
     }]
+  }, {
+    "number" : 6,
+    "image": "n1small.png",
+    "x" : 950,
+    "y" : 370,
+    "path": [ {
+        "x": 825,
+        "y": 350   
+    }]
+  }, {
+    "number" : 7,
+    "image": "n4small.png",
+    "x" : 1200,
+    "y" : 500,
+    "path": [ {
+        "x": 1100,
+        "y": 535   
+    }]
+  }, {
+    "number" : 8,
+    "image": "n3small.png",
+    "x" : 1350,
+    "y" : 500,
+    "path": [ {
+        "x": 1300,
+        "y": 535   
+    }]
+  }, {
+    "number" : 9,
+    "image": "n4small.png",
+    "x" : 1500,
+    "y" : 500,
+    "path": [ {
+        "x": 1450,
+        "y": 535   
+    }]
+  }, {
+    "number" : 10,
+    "image": "n4small.png",
+    "x" : 1700,
+    "y" : 530,
+    "path": [ {
+        "x": 1700,
+        "y": 535   
+    }]
+  }, {
+    "number" : 11,
+    "image": "n3small.png",
+    "x" : 1900,
+    "y" : 570,
+    "path": [ {
+        "x": 1800,
+        "y": 610   
+    }]
+  }, {
+    "number" : 12,
+    "image": "n1small.png",
+    "x" : 2200,
+    "y" : 570,
+    "path": [ {
+        "x": 2150,
+        "y": 620   
+    }]
   }
-  ]
+  ],
+      "sprites": [
+        {"image": "cTreeS.png",  "x": 300, "y": 300 },
+        {"image": "snowman.png", "x": 500, "y": 800 },
+        {"image": "cTreeS.png",  "x": 800, "y": 500 },
+        {"image": "snowman.png", "x": 1585, "y": 250 },
+        {"image": "cTreeS.png", "x": 1580, "y": 470 },
+        {"image": "elf_small.png",  "x": 2000, "y": 550 }
+      ]
 }

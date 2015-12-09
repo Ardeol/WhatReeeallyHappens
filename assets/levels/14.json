@@ -1,0 +1,44 @@
+{
+    "name": "(14) A Walk Around the Block",
+    "maxCycles": 7,
+    "junctions": [ {
+        "type": "standard",
+        "value": 0,
+        "x": 200,
+        "y": 100
+    }, {
+        "type": "standard",
+        "value": 4,
+        "x": 100,
+        "y": 400
+    }, {
+        "type": "standard",
+        "value": 0,
+        "x": 400,
+        "y": 400
+    }, {
+        "type": "goal",
+        "value": 0,
+        "goal": 7,
+        "x": 400,
+        "y": 100
+    } ],
+    "pipes": [ {
+		"type": "standard",
+		"source": 0,
+		"dest": 2
+	}, {
+        "type": "standard",
+        "source": 2,
+        "dest": 1
+    }, {
+        "type": "standard",
+        "source": 1,
+        "dest": 0
+    }, {
+        "type": "standard",
+        "source": 0,
+        "dest": 3
+    } ],
+    "toolbox": [3, 1, 2]
+}
