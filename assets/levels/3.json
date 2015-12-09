@@ -1,22 +1,22 @@
 {
-    "name": "Level 3",
+    "name": "(3) One After the Other",
     "maxCycles": 2,
     "junctions": [ {
         "type": "standard",
         "value": 0,
         "x": 100,
-        "y": 100
+        "y": 300
     }, {
         "type": "goal",
         "goal": 2,
         "value": 0,
-        "x": 250,
-        "y": 250
+        "x": 350,
+        "y": 150
     }, {
         "type": "goal",
         "value": 0,
         "goal": 2,
-        "x": 400,
+        "x": 500,
         "y": 400
     }],
     "pipes": [ {

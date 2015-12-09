@@ -1,5 +1,5 @@
 {
-    "name": "Level 1",
+    "name": "(1) The First Delivery",
     "maxCycles": 1,
     "junctions": [ {
         "type": "standard",
@@ -10,7 +10,7 @@
         "type": "goal",
         "goal": 1,
         "value": 0,
-        "x": 400,
+        "x": 600,
         "y": 200
     } ],
     "pipes": [ {

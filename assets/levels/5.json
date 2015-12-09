@@ -1,5 +1,5 @@
 {
-    "name": "Level 5",
+    "name": "(5) Town Square",
     "maxCycles": 1,
     "junctions": [ {
         "type": "standard",
