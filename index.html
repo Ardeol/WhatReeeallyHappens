@@ -1,15 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8"/>
-	<title>CSCE436Proj</title>
-	<meta name="description" content="" />
+    <meta charset="utf-8"/>
+    <title>Santa Claus' Visit</title>
+    <meta name="description" content="" />
     <script src="fonts.js"></script>
     <script src="pixi.min.js"></script>
-	<script src="script.js"></script>
+    <script src="script.js"></script>
+    
+    <style>
+    canvas {
+        top: 50%;
+        margin-top: -450px;
+        left: 50%;
+        margin-left: -600px;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    body {
+        background: #003316;
+    }
+    </style>
+    
 </head>
 <body>
-	<audio id="audio-menu" src="assets/audio/menu.mp3"></audio>
+    <audio id="audio-menu" src="assets/audio/menu.mp3"></audio>
     <audio id="audio-level" src="assets/audio/level.mp3"></audio>
     <audio id="audio-credits" src="assets/audio/credits.mp3"></audio>
     
@@ -18,6 +33,6 @@
     <audio id="audio-santa" src="assets/audio/santa.mp3"></audio>
     <audio id="audio-win" src="assets/audio/win.mp3"></audio>
     
-	<script src="CSCE436Proj.js"></script>
+    <script src="CSCE436Proj.js"></script>
 </body>
 </html>
